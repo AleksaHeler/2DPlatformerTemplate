@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Hey!
@@ -9,7 +10,11 @@ using UnityEngine;
 /// if there's enough interest. You can play and compete for best times here: https://tarodev.itch.io/
 /// If you hve any questions or would like to brag about your score, come to discord: https://discord.gg/GqeHHnhHpz
 /// </summary>
-public class PlayerController : MonoBehaviour, IPlayerController {
+public class PlayerController : MonoBehaviour, IPlayerController
+{
+    private bool jumpButtonPressed = false; 
+    private bool jumpButtonReleased = false; 
+
     // Public for external hooks
     public Vector3 Velocity { get; private set; }
     public FrameInput PlayerInput { get; private set; }
@@ -25,7 +30,17 @@ public class PlayerController : MonoBehaviour, IPlayerController {
     private bool _active;
     void Awake() => Invoke(nameof(Activate), 0.5f);
     void Activate() =>  _active = true;
-        
+
+
+    private void Start()
+    {
+        PlayerInputActions playerInputActions = new PlayerInputActions();
+        playerInputActions.Player.Enable();
+        playerInputActions.Player.Jump.performed += JumpButtonPressed;
+        playerInputActions.Player.Jump.canceled += JumpButtonReleased;
+
+    }
+
     private void Update() {
         if(!_active) return;
         // Calculate velocity
@@ -48,21 +63,32 @@ public class PlayerController : MonoBehaviour, IPlayerController {
 
     private void GatherInput() {
         PlayerInput = new FrameInput {
-            // TODO: change this for input
-            JumpDown = UnityEngine.Input.GetButtonDown("Jump"),
-            JumpUp = UnityEngine.Input.GetButtonUp("Jump"),
+            JumpDown = jumpButtonPressed, //UnityEngine.Input.GetButtonDown("Jump"),
+            JumpUp = jumpButtonReleased, //UnityEngine.Input.GetButtonUp("Jump"),
             X = UnityEngine.Input.GetAxisRaw("Horizontal")
         };
         if (PlayerInput.JumpDown) {
             _lastJumpPressed = Time.time;
         }
+        jumpButtonPressed = false;
     }
 
-    #endregion
+    public void JumpButtonPressed(InputAction.CallbackContext context)
+    {
+        jumpButtonPressed = true;
+        jumpButtonReleased = false;
+    }
+    public void JumpButtonReleased(InputAction.CallbackContext context)
+    {
+        jumpButtonPressed = false;
+        jumpButtonReleased = true;
+    }
 
-    #region Collisions
+        #endregion
 
-    [Header("COLLISION")] [SerializeField] private Bounds _characterBounds;
+        #region Collisions
+
+        [Header("COLLISION")] [SerializeField] private Bounds _characterBounds;
     [SerializeField] private LayerMask _groundLayer;
     [SerializeField] private int _detectorCount = 3;
     [SerializeField] private float _detectionRayLength = 0.1f;
