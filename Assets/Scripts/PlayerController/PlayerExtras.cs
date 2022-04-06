@@ -10,7 +10,7 @@ public struct FrameInput {
 
 public interface IPlayerController {
     Vector3 Velocity { get; }
-    FrameInput Input { get; }
+    FrameInput PlayerInput { get; }
     bool JumpingThisFrame { get; }
     bool LandingThisFrame { get; }
     Vector3 RawMovement { get; }

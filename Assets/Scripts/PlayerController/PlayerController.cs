@@ -12,7 +12,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour, IPlayerController {
     // Public for external hooks
     public Vector3 Velocity { get; private set; }
-    public FrameInput Input { get; private set; }
+    public FrameInput PlayerInput { get; private set; }
     public bool JumpingThisFrame { get; private set; }
     public bool LandingThisFrame { get; private set; }
     public Vector3 RawMovement { get; private set; }
@@ -47,12 +47,13 @@ public class PlayerController : MonoBehaviour, IPlayerController {
     #region Gather Input
 
     private void GatherInput() {
-        Input = new FrameInput {
+        PlayerInput = new FrameInput {
+            // TODO: change this for input
             JumpDown = UnityEngine.Input.GetButtonDown("Jump"),
             JumpUp = UnityEngine.Input.GetButtonUp("Jump"),
             X = UnityEngine.Input.GetAxisRaw("Horizontal")
         };
-        if (Input.JumpDown) {
+        if (PlayerInput.JumpDown) {
             _lastJumpPressed = Time.time;
         }
     }
@@ -151,15 +152,15 @@ public class PlayerController : MonoBehaviour, IPlayerController {
     [SerializeField] private float _apexBonus = 2;
 
     private void CalculateWalk() {
-        if (Input.X != 0) {
+        if (PlayerInput.X != 0) {
             // Set horizontal move speed
-            _currentHorizontalSpeed += Input.X * _acceleration * Time.deltaTime;
+            _currentHorizontalSpeed += PlayerInput.X * _acceleration * Time.deltaTime;
 
             // clamped by max frame movement
             _currentHorizontalSpeed = Mathf.Clamp(_currentHorizontalSpeed, -_moveClamp, _moveClamp);
 
             // Apply bonus at the apex of a jump
-            var apexBonus = Mathf.Sign(Input.X) * _apexBonus * _apexPoint;
+            var apexBonus = Mathf.Sign(PlayerInput.X) * _apexBonus * _apexPoint;
             _currentHorizontalSpeed += apexBonus * Time.deltaTime;
         }
         else {
@@ -228,7 +229,7 @@ public class PlayerController : MonoBehaviour, IPlayerController {
 
     private void CalculateJump() {
         // Jump if: grounded or within coyote threshold || sufficient jump buffer
-        if (Input.JumpDown && CanUseCoyote || HasBufferedJump) {
+        if (PlayerInput.JumpDown && CanUseCoyote || HasBufferedJump) {
             _currentVerticalSpeed = _jumpHeight;
             _endedJumpEarly = false;
             _coyoteUsable = false;
@@ -240,7 +241,7 @@ public class PlayerController : MonoBehaviour, IPlayerController {
         }
 
         // End the jump early if button released
-        if (!_colDown && Input.JumpUp && !_endedJumpEarly && Velocity.y > 0) {
+        if (!_colDown && PlayerInput.JumpUp && !_endedJumpEarly && Velocity.y > 0) {
             // _currentVerticalSpeed = 0;
             _endedJumpEarly = true;
         }
