@@ -7,6 +7,8 @@ Using [Matthew-J-Spencers](https://github.com/Matthew-J-Spencer) [**Ultimate 2D 
 ## Input system
 TODO: Code Monkey - [How to use NEW Input System Package](https://www.youtube.com/watch?v=Yjee_e4fICc)
 
+TODO: assets for on screen key cues: [Mental Checkpoints video](https://www.youtube.com/watch?v=d6GtGbI-now)
+
 ## Audio manager
 TODO
 
