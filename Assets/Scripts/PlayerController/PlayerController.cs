@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -12,8 +13,10 @@ using UnityEngine.InputSystem;
 /// </summary>
 public class PlayerController : MonoBehaviour, IPlayerController
 {
-    private bool jumpButtonPressed = false; 
-    private bool jumpButtonReleased = false; 
+    PlayerInputActions playerInputActions;
+    private bool jumpButtonPressed = false;
+    private bool jumpButtonReleased = false;
+    private float horizontalAxisValue = 0f;
 
     // Public for external hooks
     public Vector3 Velocity { get; private set; }
@@ -28,18 +31,21 @@ public class PlayerController : MonoBehaviour, IPlayerController
 
     // This is horrible, but for some reason colliders are not fully established when update starts...
     private bool _active;
-    void Awake() => Invoke(nameof(Activate), 0.5f);
-    void Activate() =>  _active = true;
-
-
-    private void Start()
+    void Awake()
     {
-        PlayerInputActions playerInputActions = new PlayerInputActions();
+        Invoke(nameof(Activate), 0.5f);
+        playerInputActions = new PlayerInputActions();
         playerInputActions.Player.Enable();
+
+        // Subscribe to input events
         playerInputActions.Player.Jump.performed += JumpButtonPressed;
         playerInputActions.Player.Jump.canceled += JumpButtonReleased;
-
+        playerInputActions.Player.Movement.performed += MovementPerformed;
+        playerInputActions.Player.Movement.canceled += MovementPerformed;
+        playerInputActions.Player.Pause.performed += PauseGame;
     }
+    void Activate() =>  _active = true;
+
 
     private void Update() {
         if(!_active) return;
@@ -63,9 +69,9 @@ public class PlayerController : MonoBehaviour, IPlayerController
 
     private void GatherInput() {
         PlayerInput = new FrameInput {
-            JumpDown = jumpButtonPressed, //UnityEngine.Input.GetButtonDown("Jump"),
-            JumpUp = jumpButtonReleased, //UnityEngine.Input.GetButtonUp("Jump"),
-            X = UnityEngine.Input.GetAxisRaw("Horizontal")
+            JumpDown = jumpButtonPressed,
+            JumpUp = jumpButtonReleased,
+            X = horizontalAxisValue //playerInputActions.Player.Movement.ReadValue<Vector2>().x //UnityEngine.Input.GetAxisRaw("Horizontal")
         };
         if (PlayerInput.JumpDown) {
             _lastJumpPressed = Time.time;
@@ -73,22 +79,45 @@ public class PlayerController : MonoBehaviour, IPlayerController
         jumpButtonPressed = false;
     }
 
-    public void JumpButtonPressed(InputAction.CallbackContext context)
+    private void JumpButtonPressed(InputAction.CallbackContext context)
     {
         jumpButtonPressed = true;
         jumpButtonReleased = false;
     }
-    public void JumpButtonReleased(InputAction.CallbackContext context)
+    private void JumpButtonReleased(InputAction.CallbackContext context)
     {
         jumpButtonPressed = false;
         jumpButtonReleased = true;
     }
 
-        #endregion
+    private void MovementPerformed(InputAction.CallbackContext context)
+    {
+        horizontalAxisValue = context.ReadValue<Vector2>().x;
+    }
 
-        #region Collisions
+    private void PauseGame(InputAction.CallbackContext context)
+    {
+        try
+        {
+            playerInputActions.Player.Disable();
+            playerInputActions.UI.Enable();
+            GameObject.FindGameObjectWithTag("Canvas").GetComponent<PauseMenuController>().PauseGame();
+        }
+        catch (Exception e) { Debug.Log(e); }
+    }
 
-        [Header("COLLISION")] [SerializeField] private Bounds _characterBounds;
+
+    public void ResumeGame()
+    {
+        playerInputActions.Player.Enable();
+        playerInputActions.UI.Disable();
+    }
+
+    #endregion
+
+    #region Collisions
+
+    [Header("COLLISION")] [SerializeField] private Bounds _characterBounds;
     [SerializeField] private LayerMask _groundLayer;
     [SerializeField] private int _detectorCount = 3;
     [SerializeField] private float _detectionRayLength = 0.1f;
